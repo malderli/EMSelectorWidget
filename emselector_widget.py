@@ -94,7 +94,6 @@ class EMSelector(QWidget):
 
     def paintEvent(self, event):
         self._isAllSelected = True
-        self._signsRects.clear()
         self._selectedAmount = 0
 
         # Painter setup
@@ -110,8 +109,9 @@ class EMSelector(QWidget):
         active = []
         inactive = []
 
-        # Gen value rects
+        # Creation of rects
         if len(self._signs) > 0:
+            self._signsRects.clear()
 
             # Creation of sign rects
             for sid, sname in self._signs:
@@ -121,6 +121,8 @@ class EMSelector(QWidget):
 
                 # Determination of sign colors
                 if self._selections[sid]:
+                    self._selectedAmount += 1
+
                     # If alternative background color is set
                     if (sid is self._usercolors) and ('backcolor' in self._usercolors[sid]):
                         backcolor = self._usercolors[sid]
@@ -162,22 +164,22 @@ class EMSelector(QWidget):
             self._signsRects += active
             self._signsRects += inactive
 
-            # Rendering sign rects
-            currx = EMSelector.globalDeltas['startx']
-            curry = EMSelector.globalDeltas['starty']
+        # Rendering sign rects
+        currx = EMSelector.globalDeltas['startx']
+        curry = EMSelector.globalDeltas['starty']
 
-            for signRect in self._signsRects:
-                if currx + signRect['mainRect'].width() + EMSelector.globalDeltas['margin'] > self.width():
-                    # Next row
-                    currx = EMSelector.globalDeltas['startx']
-                    curry += signRect['mainRect'].height() + EMSelector.globalDeltas['margin']
+        for signRect in self._signsRects:
+            if currx + signRect['mainRect'].width() + EMSelector.globalDeltas['margin'] > self.width():
+                # Next row
+                currx = EMSelector.globalDeltas['startx']
+                curry += signRect['mainRect'].height() + EMSelector.globalDeltas['margin']
 
-                    self.setMinimumHeight(curry + EMSelector.globalDeltas['margin'] + signRect['mainRect'].height())
+                self.setMinimumHeight(curry + EMSelector.globalDeltas['margin'] + signRect['mainRect'].height())
 
-                self._moveSignRect(signRect, currx, curry)
-                self._renderSignRect(signRect, painter)
+            self._moveSignRect(signRect, currx, curry)
+            self._renderSignRect(signRect, painter)
 
-                currx += signRect['mainRect'].width() + EMSelector.globalDeltas['margin']
+            currx += signRect['mainRect'].width() + EMSelector.globalDeltas['margin']
 
         painter.restore()
 
@@ -238,6 +240,9 @@ class EMSelector(QWidget):
 
     # ****************************** Click Press handlers ******************************
 
+    def multi(self, state):
+        self._isMultiselect = state
+
     def keyPressEvent(self, event):
         # Check Ctrl pressed
         if event.key() == 0x01000021:
@@ -249,4 +254,40 @@ class EMSelector(QWidget):
             self._isMultiselect = False
 
     def mousePressEvent(self, event):
-        pass
+        for signRect in self._signsRects:
+            if signRect['mainRect'].contains(event.pos()):
+                # If it is btn 'All'
+                if signRect['id'] == 'ALL':
+                    # If all selected -> unselect all
+                    if self._isAllSelected:
+                        for sid, sname in self._signs:
+                            self._selections[sid] = False
+                    # Otherwise select all
+                    else:
+                        for sid, sname in self._signs:
+                            self._selections[sid] = self._quantities[sid] > 0
+
+                    self._isAllSelected = not self._isAllSelected
+
+                # If quantity less or equal 0 - unselect (selection of such items is not allowed)
+                elif self._quantities[signRect['id']] <= 0:
+                    self._selections[signRect['id']] = False
+
+                # If multiselect -> just add(rem) selection
+                elif self._isMultiselectable and self._isMultiselect:
+                    self._selections[signRect['id']] = not self._selections[signRect['id']]
+
+                # If common item clicked and not multiselect
+                else:
+                    # If there are any items selected, select just this one
+                    if self._selectedAmount >= 1:
+                        for sid, sname in self._signs:
+                            self._selections[sid] = False
+
+                        self._selections[signRect['id']] = True
+                    # Else -> mirror state of selection
+                    else:
+                        self._selections[signRect['id']] = not self._selections[signRect['id']]
+
+                self.repaint()
+
