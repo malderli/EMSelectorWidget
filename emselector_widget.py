@@ -124,8 +124,8 @@ class EMSelector(QWidget):
                     self._selectedAmount += 1
 
                     # If alternative background color is set
-                    if (sid is self._usercolors) and ('backcolor' in self._usercolors[sid]):
-                        backcolor = self._usercolors[sid]
+                    if (sid in self._usercolors) and ('backcolor' in self._usercolors[sid]):
+                        backcolor = self._usercolors[sid]['backcolor']
                     else:
                         backcolor = EMSelector.colors['sign_enabled']
                 else:
@@ -133,14 +133,14 @@ class EMSelector(QWidget):
 
                 if self._quantities[sid] > 0:
                     # If alternative text color is set
-                    if (sid is self._usercolors) and ('textcolor' in self._usercolors[sid]):
-                        textcolor = self._usercolors[sid]
+                    if (sid in self._usercolors) and ('textcolor' in self._usercolors[sid]):
+                        textcolor = self._usercolors[sid]['textcolor']
                     else:
                         textcolor = EMSelector.colors['text_enabled']
                 else:
                     # If alternative inactive text color is set
-                    if (sid is self._usercolors) and ('textcolor_0' in self._usercolors[sid]):
-                        textcolor = self._usercolors[sid]
+                    if (sid in self._usercolors) and ('textcolor_0' in self._usercolors[sid]):
+                        textcolor = self._usercolors[sid]['textcolor_0']
                     else:
                         textcolor = EMSelector.colors['text_disabled']
 
@@ -279,12 +279,16 @@ class EMSelector(QWidget):
 
                 # If common item clicked and not multiselect
                 else:
+                    # If only this one is selected -> diselect it
+                    if (self._selectedAmount == 1) and self._selections[signRect['id']]:
+                        self._selections[signRect['id']] = False
+
                     # If there are any items selected, select just this one
-                    if self._selectedAmount >= 1:
+                    elif self._selectedAmount >= 1:
                         for sid, sname in self._signs:
                             self._selections[sid] = False
-
                         self._selections[signRect['id']] = True
+
                     # Else -> mirror state of selection
                     else:
                         self._selections[signRect['id']] = not self._selections[signRect['id']]
