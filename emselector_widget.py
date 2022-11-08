@@ -82,9 +82,13 @@ class EMSelector(QWidget):
         self._usercolors.clear()
 
     def getSelected(self):
+        # res: [ name/str ]
         res = []
 
-        # res: [ name/str ]
+        for sign in self._signs:
+            if self._selections[sign]:
+                res.append(sign)
+
         return res
 
     def clearAll(self):
