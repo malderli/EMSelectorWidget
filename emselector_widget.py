@@ -212,7 +212,7 @@ class EMSelector(QWidget):
                           textRect.height() + powRect.height() + EMSelector.signDeltas['txt_pow_vertical'] +
                           EMSelector.signDeltas['txt_bottom'] + EMSelector.signDeltas['pow_top'])
 
-        return { 'text': text, 'quantity': quantity, 'mainRect': mainQRect, 'textRect': textRect,
+        return { 'name': text, 'quantity': quantity, 'mainRect': mainQRect, 'textRect': textRect,
                 'powRect': powRect, 'backColor': backcolor, 'textColor': textcolor, 'isService': isService }
 
     def _moveSignRect(self, signRect, x, y):
@@ -235,7 +235,7 @@ class EMSelector(QWidget):
         painter.setFont(self.mainFont)
 
         painter.setPen(QColor(signRect['textColor']))
-        painter.drawText(signRect['textRect'], 0, signRect['text'])
+        painter.drawText(signRect['textRect'], 0, signRect['name'])
 
         painter.setFont(self.powFont)
         painter.drawText(signRect['powRect'], 0, str(signRect['quantity']))
