@@ -13,6 +13,8 @@ class EMSelector(QWidget):
     colors = { 'sign_enabled': '#67BDFF', 'sign_disabled': '#F6F6F6', 'sign_all_enabled': '#88CC66',
                'text_enabled': '#000000', 'text_disabled': '#808080', 'background': '#FFFFFF' }
 
+    btnAllText = '   Все   '
+
     def __init__(self, isMultiselectable = True):
         super(EMSelector, self).__init__()
 
@@ -21,17 +23,17 @@ class EMSelector(QWidget):
         self._sorter = lambda sign: sign[0]
 
         # Signs properties
-        # signs: [ (id/int, name/str) ]
+        # signs: [ name/str ]
         self._signs = []
-        # colors: { id/int: { backcolor/str, textcolor/str, textcolor_0/str } }
+        # colors: { name/str: { backcolor/str, textcolor/str, textcolor_0/str } }
         self._usercolors = {}
-        # quantities: { id/int: quantity/int }
+        # quantities: { name/str: quantity/int }
         self._quantities = {}
-        # selections: { id/int: isSelected/bool }
+        # selections: { name/str: isSelected/bool }
         self._selections = {}
 
         # Runtime variables
-        # signRects: [ { id/int|str, name/str, quantity/str, mainRect/QRect, textRect/QRect, powRect/QRect,
+        # signRects: [ { name/str, quantity/str, mainRect/QRect, textRect/QRect, powRect/QRect,
         #                backColor/str, textColor/str } ]
         self._signsRects = []
         self._isMultiselect = False
@@ -50,27 +52,27 @@ class EMSelector(QWidget):
         self.powFontMetrics = QFontMetrics(self.powFont)
 
     def setSigns(self, signs):
-        # signs: [ (id/int, name/str) ]
+        # signs: [ name/str ]
 
         self.clearAll()
         self._signs = signs
 
         for sign in self._signs:
-            self._selections[sign[0]] = False
+            self._selections[sign] = False
 
     def setSignsColors(self, colors):
-        # colors: { id/int: color/str }
+        # colors: { name/str: color/str }
 
         self._usercolors = colors
 
     def setQuantity(self, quantities):
-        # quantities: { id/int: quantity/int }
+        # quantities: { name/str: quantity/int }
 
         self._quantities = quantities
 
-        for sid, sname in self._signs:
-            if not(sid in self._quantities):
-                self._quantities[sid] = 0
+        for sign in self._signs:
+            if not(sign in self._quantities):
+                self._quantities[sign] = 0
 
     def setSorter(self, sorter):
         # sorter/lambda
@@ -82,7 +84,7 @@ class EMSelector(QWidget):
     def getSelected(self):
         res = []
 
-        # res: [ id/int ]
+        # res: [ name/str ]
         return res
 
     def clearAll(self):
@@ -114,40 +116,40 @@ class EMSelector(QWidget):
             self._signsRects.clear()
 
             # Creation of sign rects
-            for sid, sname in self._signs:
+            for sign in self._signs:
                 # Check if any sign with positive amount is unselected
-                if not self._selections[sid] and (self._quantities[sid] > 0):
+                if not self._selections[sign] and (self._quantities[sign] > 0):
                     self._isAllSelected = False
 
                 # Determination of sign colors
-                if self._selections[sid]:
+                if self._selections[sign]:
                     self._selectedAmount += 1
 
                     # If alternative background color is set
-                    if (sid in self._usercolors) and ('backcolor' in self._usercolors[sid]):
-                        backcolor = self._usercolors[sid]['backcolor']
+                    if (sign in self._usercolors) and ('backcolor' in self._usercolors[sign]):
+                        backcolor = self._usercolors[sign]['backcolor']
                     else:
                         backcolor = EMSelector.colors['sign_enabled']
                 else:
                     backcolor = EMSelector.colors['sign_disabled']
 
-                if self._quantities[sid] > 0:
+                if self._quantities[sign] > 0:
                     # If alternative text color is set
-                    if (sid in self._usercolors) and ('textcolor' in self._usercolors[sid]):
-                        textcolor = self._usercolors[sid]['textcolor']
+                    if (sign in self._usercolors) and ('textcolor' in self._usercolors[sign]):
+                        textcolor = self._usercolors[sign]['textcolor']
                     else:
                         textcolor = EMSelector.colors['text_enabled']
                 else:
                     # If alternative inactive text color is set
-                    if (sid in self._usercolors) and ('textcolor_0' in self._usercolors[sid]):
-                        textcolor = self._usercolors[sid]['textcolor_0']
+                    if (sign in self._usercolors) and ('textcolor_0' in self._usercolors[sign]):
+                        textcolor = self._usercolors[sign]['textcolor_0']
                     else:
                         textcolor = EMSelector.colors['text_disabled']
 
                 # Create sign rect
-                signRect = self._createSignRect(sid, sname, self._quantities[sid], backcolor, textcolor)
+                signRect = self._createSignRect(sign, self._quantities[sign], backcolor, textcolor, False)
 
-                if self._quantities[sid] > 0:
+                if self._quantities[sign] > 0:
                     active.append(signRect)
                 else:
                     inactive.append(signRect)
@@ -157,8 +159,8 @@ class EMSelector(QWidget):
                 backcolor = EMSelector.colors['sign_all_enabled'] if self._isAllSelected \
                     else EMSelector.colors['sign_disabled']
 
-                self._signsRects.append(self._createSignRect('ALL', '   Все   ', None, backcolor,
-                                                               EMSelector.colors['text_enabled']))
+                self._signsRects.append(self._createSignRect(EMSelector.btnAllText, None, backcolor,
+                                                               EMSelector.colors['text_enabled'], True))
 
             # TODO: sort?
             self._signsRects += active
@@ -185,11 +187,11 @@ class EMSelector(QWidget):
 
     # +++++++++++++++++++++++++++++ Sign rects interaction +++++++++++++++++++++++++++++
 
-    def _createSignRect(self, id, text, quantity, backcolor, textcolor):
-        # signRect: { id/int|str, name/str, quantity/str, mainRect/QRect, textRect/QRect, powRect/QRect,
+    def _createSignRect(self, text, quantity, backcolor, textcolor, isService = False):
+        # signRect: { name/str, quantity/str, mainRect/QRect, textRect/QRect, powRect/QRect,
         #             backColor/str, textColor/str }
 
-        if quantity == None:
+        if quantity is None:
             quantity = ''
 
         textRect = QRect(EMSelector.signDeltas['txt_left'],
@@ -210,8 +212,8 @@ class EMSelector(QWidget):
                           textRect.height() + powRect.height() + EMSelector.signDeltas['txt_pow_vertical'] +
                           EMSelector.signDeltas['txt_bottom'] + EMSelector.signDeltas['pow_top'])
 
-        return { 'id': id, 'text': text, 'quantity': quantity, 'mainRect': mainQRect, 'textRect': textRect,
-                'powRect': powRect, 'backColor': backcolor, 'textColor': textcolor}
+        return { 'name': text, 'quantity': quantity, 'mainRect': mainQRect, 'textRect': textRect,
+                'powRect': powRect, 'backColor': backcolor, 'textColor': textcolor, 'isService': isService }
 
     def _moveSignRect(self, signRect, x, y):
         currx = signRect['mainRect'].x()
@@ -233,7 +235,7 @@ class EMSelector(QWidget):
         painter.setFont(self.mainFont)
 
         painter.setPen(QColor(signRect['textColor']))
-        painter.drawText(signRect['textRect'], 0, signRect['text'])
+        painter.drawText(signRect['textRect'], 0, signRect['name'])
 
         painter.setFont(self.powFont)
         painter.drawText(signRect['powRect'], 0, str(signRect['quantity']))
@@ -257,41 +259,41 @@ class EMSelector(QWidget):
         for signRect in self._signsRects:
             if signRect['mainRect'].contains(event.pos()):
                 # If it is btn 'All'
-                if signRect['id'] == 'ALL':
+                if (signRect['name'] == EMSelector.btnAllText) and (signRect['isService'] is True):
                     # If all selected -> unselect all
                     if self._isAllSelected:
-                        for sid, sname in self._signs:
-                            self._selections[sid] = False
+                        for sign in self._signs:
+                            self._selections[sign] = False
                     # Otherwise select all
                     else:
-                        for sid, sname in self._signs:
-                            self._selections[sid] = self._quantities[sid] > 0
+                        for sign in self._signs:
+                            self._selections[sign] = self._quantities[sign] > 0
 
                     self._isAllSelected = not self._isAllSelected
 
                 # If quantity less or equal 0 - unselect (selection of such items is not allowed)
-                elif self._quantities[signRect['id']] <= 0:
-                    self._selections[signRect['id']] = False
+                elif self._quantities[signRect['name']] <= 0:
+                    self._selections[signRect['name']] = False
 
                 # If multiselect -> just add(rem) selection
                 elif self._isMultiselectable and self._isMultiselect:
-                    self._selections[signRect['id']] = not self._selections[signRect['id']]
+                    self._selections[signRect['name']] = not self._selections[signRect['name']]
 
                 # If common item clicked and not multiselect
                 else:
                     # If only this one is selected -> diselect it
-                    if (self._selectedAmount == 1) and self._selections[signRect['id']]:
-                        self._selections[signRect['id']] = False
+                    if (self._selectedAmount == 1) and self._selections[signRect['name']]:
+                        self._selections[signRect['name']] = False
 
                     # If there are any items selected, select just this one
                     elif self._selectedAmount >= 1:
-                        for sid, sname in self._signs:
-                            self._selections[sid] = False
-                        self._selections[signRect['id']] = True
+                        for sign in self._signs:
+                            self._selections[sign] = False
+                        self._selections[signRect['name']] = True
 
                     # Else -> mirror state of selection
                     else:
-                        self._selections[signRect['id']] = not self._selections[signRect['id']]
+                        self._selections[signRect['name']] = not self._selections[signRect['name']]
 
                 self.repaint()
 
