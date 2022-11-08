@@ -47,14 +47,14 @@ class DemoWidget(QWidget):
         self.setTestData()
 
     def setTestData(self):
-        self.emLeft.setSigns([(0, 'fjkdkte'), (1, 'ekktnt'), (2, 'ehtkdkwtd')])
-        self.emLeft.setQuantity({0: 20, 1: 32})
+        self.emLeft.setSigns(['fjkdkte', 'ekktnt', 'ehtkdkwtd'])
+        self.emLeft.setQuantity({'fjkdkte': 20, 'ekktnt': 32})
 
-        self.emRight.setSigns([(0, 'fjkdkte'), (1, 'ekktnt'), (2, 'ehtkdkwtd')])
-        self.emRight.setQuantity({0: 20, 1: 32})
+        self.emRight.setSigns(['fjkdkte', 'ekktnt', 'ehtkdkwtd'])
+        self.emRight.setQuantity({'fjkdkte': 20, 'ehtkdkwtd': 32})
 
         self.teColorsLeft.setText('''{ 
-          "0": { "backcolor": "#BD67FF",
+          "fjkdkte": { "backcolor": "#BD67FF",
           "textcolor": "#000000",
           "textcolor_0": "#808080"}
         }''')
@@ -64,7 +64,7 @@ class DemoWidget(QWidget):
         colorsLeft = {}
 
         for key, value in jsonLeft.items():
-            colorsLeft[int(key)] = value
+            colorsLeft[str(key)] = value
 
         # colorsRight = json.loads(self.teColorsRight.toPlainText())
 
